@@ -1,0 +1,15 @@
+C:\Users\HP\Desktop\6308\Github\rockpaperscisors\GuessNumberGame\bin\Debug\net10.0\GuessNumberGame.exe
+C:\Users\HP\Desktop\6308\Github\rockpaperscisors\GuessNumberGame\bin\Debug\net10.0\GuessNumberGame.deps.json
+C:\Users\HP\Desktop\6308\Github\rockpaperscisors\GuessNumberGame\bin\Debug\net10.0\GuessNumberGame.runtimeconfig.json
+C:\Users\HP\Desktop\6308\Github\rockpaperscisors\GuessNumberGame\bin\Debug\net10.0\GuessNumberGame.dll
+C:\Users\HP\Desktop\6308\Github\rockpaperscisors\GuessNumberGame\bin\Debug\net10.0\GuessNumberGame.pdb
+C:\Users\HP\Desktop\6308\Github\rockpaperscisors\GuessNumberGame\obj\Debug\net10.0\GuessNumberGame.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\HP\Desktop\6308\Github\rockpaperscisors\GuessNumberGame\obj\Debug\net10.0\GuessNumberGame.AssemblyInfoInputs.cache
+C:\Users\HP\Desktop\6308\Github\rockpaperscisors\GuessNumberGame\obj\Debug\net10.0\GuessNumberGame.AssemblyInfo.cs
+C:\Users\HP\Desktop\6308\Github\rockpaperscisors\GuessNumberGame\obj\Debug\net10.0\GuessNumberGame.csproj.CoreCompileInputs.cache
+C:\Users\HP\Desktop\6308\Github\rockpaperscisors\GuessNumberGame\obj\Debug\net10.0\GuessNumberGame.sourcelink.json
+C:\Users\HP\Desktop\6308\Github\rockpaperscisors\GuessNumberGame\obj\Debug\net10.0\GuessNumberGame.dll
+C:\Users\HP\Desktop\6308\Github\rockpaperscisors\GuessNumberGame\obj\Debug\net10.0\refint\GuessNumberGame.dll
+C:\Users\HP\Desktop\6308\Github\rockpaperscisors\GuessNumberGame\obj\Debug\net10.0\GuessNumberGame.pdb
+C:\Users\HP\Desktop\6308\Github\rockpaperscisors\GuessNumberGame\obj\Debug\net10.0\GuessNumberGame.genruntimeconfig.cache
+C:\Users\HP\Desktop\6308\Github\rockpaperscisors\GuessNumberGame\obj\Debug\net10.0\ref\GuessNumberGame.dll
