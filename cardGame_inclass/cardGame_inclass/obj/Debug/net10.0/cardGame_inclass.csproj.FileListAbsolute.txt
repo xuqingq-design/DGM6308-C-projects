@@ -1,0 +1,15 @@
+C:\Users\HP\Desktop\6308\Github\projects\cardGame_inclass\cardGame_inclass\bin\Debug\net10.0\cardGame_inclass.exe
+C:\Users\HP\Desktop\6308\Github\projects\cardGame_inclass\cardGame_inclass\bin\Debug\net10.0\cardGame_inclass.deps.json
+C:\Users\HP\Desktop\6308\Github\projects\cardGame_inclass\cardGame_inclass\bin\Debug\net10.0\cardGame_inclass.runtimeconfig.json
+C:\Users\HP\Desktop\6308\Github\projects\cardGame_inclass\cardGame_inclass\bin\Debug\net10.0\cardGame_inclass.dll
+C:\Users\HP\Desktop\6308\Github\projects\cardGame_inclass\cardGame_inclass\bin\Debug\net10.0\cardGame_inclass.pdb
+C:\Users\HP\Desktop\6308\Github\projects\cardGame_inclass\cardGame_inclass\obj\Debug\net10.0\cardGame_inclass.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\HP\Desktop\6308\Github\projects\cardGame_inclass\cardGame_inclass\obj\Debug\net10.0\cardGame_inclass.AssemblyInfoInputs.cache
+C:\Users\HP\Desktop\6308\Github\projects\cardGame_inclass\cardGame_inclass\obj\Debug\net10.0\cardGame_inclass.AssemblyInfo.cs
+C:\Users\HP\Desktop\6308\Github\projects\cardGame_inclass\cardGame_inclass\obj\Debug\net10.0\cardGame_inclass.csproj.CoreCompileInputs.cache
+C:\Users\HP\Desktop\6308\Github\projects\cardGame_inclass\cardGame_inclass\obj\Debug\net10.0\cardGame_inclass.sourcelink.json
+C:\Users\HP\Desktop\6308\Github\projects\cardGame_inclass\cardGame_inclass\obj\Debug\net10.0\cardGame_inclass.dll
+C:\Users\HP\Desktop\6308\Github\projects\cardGame_inclass\cardGame_inclass\obj\Debug\net10.0\refint\cardGame_inclass.dll
+C:\Users\HP\Desktop\6308\Github\projects\cardGame_inclass\cardGame_inclass\obj\Debug\net10.0\cardGame_inclass.pdb
+C:\Users\HP\Desktop\6308\Github\projects\cardGame_inclass\cardGame_inclass\obj\Debug\net10.0\cardGame_inclass.genruntimeconfig.cache
+C:\Users\HP\Desktop\6308\Github\projects\cardGame_inclass\cardGame_inclass\obj\Debug\net10.0\ref\cardGame_inclass.dll
