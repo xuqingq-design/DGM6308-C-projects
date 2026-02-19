@@ -1,0 +1,9 @@
+﻿//
+namespace Checkers;
+public enum PieceType
+{
+    Normal = 0,
+    Rock = 1,
+    Knight = 2,
+    King = 3,
+}

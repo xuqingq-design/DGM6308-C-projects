@@ -78,6 +78,12 @@ void RunGameLoop(Game game)
 			{
 				(int X, int Y)? selectionStart = null; //position of starting
 				(int X, int Y)? from = game.Board.Aggressor is not null ? (game.Board.Aggressor.X, game.Board.Aggressor.Y) : null; //if there is a Aggressor, player must use this piece
+																																   //NEW: if a special piece has an extra move, must do this move
+				if (from is null && game.Board.PieceWithExtraMove is not null)
+				{
+					from = (game.Board.PieceWithExtraMove.X, game.Board.PieceWithExtraMove.Y); //select this special piece automatically
+				}
+
 				List<Move> moves = game.Board.GetPossibleMoves(game.Turn); //get all posiblility of moves
 				if (moves.Select(move => move.PieceToMove).Distinct().Count() is 1) //if only one piece can move
 				{
@@ -104,7 +110,30 @@ void RunGameLoop(Game game)
 					if (move is not null &&
 						(game.Board.Aggressor is null || move.PieceToMove == game.Board.Aggressor))
 					{
+						//NEW: check if the piece is going to arrive at the edge of the board => get promoted
+						bool piecePromote = false;
+						if (move.PieceToMove.Type == PieceType.Normal && !move.PieceToMove.Promoted) //only normal piece can be promoted
+						{
+							if (move.PieceToMove.Color is Black && move.To.Y == 7)
+							{
+								piecePromote = true;
+							}
+							else if (move.PieceToMove.Color is White && move.To.Y == 0)
+							{
+								piecePromote = true;
+							}
+						}
 						game.PerformMove(move);
+						if (piecePromote)
+						{
+							//let the player choose the promote type of this piece
+							PieceType piecePromoteSelectionType = promoteSelection(game, move.PieceToMove);
+							move.PieceToMove.Type = piecePromoteSelectionType;
+							move.PieceToMove.Promoted = true;
+							//clear the console and re-render the board
+							Console.Clear();
+							RenderGameState(game, playerMoved: currentPlayer, promptPressKey: false);
+						}
 					}
 				}
 			}
@@ -113,19 +142,43 @@ void RunGameLoop(Game game)
 		{
 			List<Move> moves = game.Board.GetPossibleMoves(game.Turn);
 			List<Move> captures = moves.Where(move => move.PieceToCapture is not null).ToList();
+			//NEW: define selectedMove
+			Move? selectedMove = null;
 			if (captures.Count > 0) //if pieces can capture other opponent's pieces
 			{
-				game.PerformMove(captures[Random.Shared.Next(captures.Count)]); //randomly select a piece to capture
+				selectedMove = captures[Random.Shared.Next(captures.Count)]; //randomly select a piece to capture
 			}
-			else if(!game.Board.Pieces.Any(piece => piece.Color == game.Turn && !piece.Promoted)) //if all the pieces has been promoted
+			else if (!game.Board.Pieces.Any(piece => piece.Color == game.Turn && !piece.Promoted)) //if all the pieces has been promoted
 			{
 				var (a, b) = game.Board.GetClosestRivalPieces(game.Turn); //move to the closest opponent's piece
 				Move? priorityMove = moves.FirstOrDefault(move => move.PieceToMove == a && Board.IsTowards(move, b));
-				game.PerformMove(priorityMove ?? moves[Random.Shared.Next(moves.Count)]);
+				selectedMove = priorityMove ?? moves[Random.Shared.Next(moves.Count)];
 			}
 			else
 			{
-				game.PerformMove(moves[Random.Shared.Next(moves.Count)]); //random move
+				selectedMove = moves[Random.Shared.Next(moves.Count)]; //random move
+			}
+			//NEW: if the next select move will let one piece get promoted
+			bool pieceComPromote = false;
+			if (selectedMove.PieceToMove.Type == PieceType.Normal && !selectedMove.PieceToMove.Promoted)
+			{
+				if (selectedMove.PieceToMove.Color is Black && selectedMove.To.Y == 7)
+				{
+					pieceComPromote = true;
+				}
+				else if (selectedMove.PieceToMove.Color is White && selectedMove.To.Y == 0)
+				{
+					pieceComPromote = true;
+				}
+			}
+			game.PerformMove(selectedMove);
+			if (pieceComPromote)
+			{
+				//define an array to store all piece types
+				PieceType[] promoteOptions = { PieceType.Rock, PieceType.Knight, PieceType.King };
+				//computer select one type to promote randomly
+				selectedMove.PieceToMove.Type = promoteOptions[Random.Shared.Next(0, promoteOptions.Length)];
+				selectedMove.PieceToMove.Promoted=true;
 			}
 		}
 
@@ -134,13 +187,63 @@ void RunGameLoop(Game game)
 	}
 }
 
+//NEW: display the promotion menu (WriteLine text format is adjusted by AI)
+PieceType promoteSelection(Game game, Piece piece)
+{
+	Console.Clear();
+	Console.WriteLine();
+	Console.WriteLine("  ╔═══════════════════════════════════════╗");
+	Console.WriteLine("  ║     PROMOTION - Choose Piece Type     ║");
+	Console.WriteLine("  ╚═══════════════════════════════════════╝");
+	Console.WriteLine();
+	Console.WriteLine($"  Your {piece.Color} piece has reached the end!");
+	Console.WriteLine("  Choose what to promote it to:");
+	Console.WriteLine();
+	Console.WriteLine("  [1] Rock   - Moves straight (horizontal/vertical), 1 square");
+	Console.WriteLine("              Gets extra move after capturing");
+	Console.WriteLine();
+	Console.WriteLine("  [2] Knight - Moves in L-shape");
+	Console.WriteLine("              Can be blocked by hobbling horse");
+	Console.WriteLine("              Gets extra move after capturing");
+	Console.WriteLine();
+	Console.WriteLine("  [3] King   - Moves in all 8 directions, 1 square");
+	Console.WriteLine("              Gets extra move after capturing");
+	Console.WriteLine();
+	Console.Write("  Enter your choice (1-3): ");
+
+	while (true)
+	{
+		Console.CursorVisible = false;
+		ConsoleKey key = Console.ReadKey(true).Key;
+		switch (key)
+		{
+			case ConsoleKey.D1:
+				Console.WriteLine(" [1] - Rock ");
+				return PieceType.Rock;
+			case ConsoleKey.D2:
+				Console.WriteLine(" [2] - Knight ");
+				return PieceType.Knight;
+			case ConsoleKey.D3:
+				Console.WriteLine(" [3] - King ");
+				return PieceType.King;
+			default:
+				Console.WriteLine(" invalid input, please try again");
+				continue;
+		}
+	}
+}
+
 void RenderGameState(Game game, Player? playerMoved = null, (int X, int Y)? selection = null, (int X, int Y)? from = null, bool promptPressKey = false)
 {
-	const char BlackPiece = '○';
-	const char BlackKing  = '☺';
-	const char WhitePiece = '◙';
-	const char WhiteKing  = '☻';
-	const char Vacant     = '·';
+	const char BlackNormal = '○';
+	const char BlackRock = '□'; //NEW
+	const char BlackKnight = '△'; //NEW 
+	const char BlackKing = '☺';
+	const char WhiteNormal = '◙';
+	const char WhiteRock = '■'; //NEW
+	const char WhiteKnight = '▲'; //NEW 
+	const char WhiteKing = '☻';
+	const char Vacant = '·';
 
 	Console.CursorVisible = false;
 	Console.SetCursorPosition(0, 0);
@@ -149,14 +252,14 @@ void RenderGameState(Game game, Player? playerMoved = null, (int X, int Y)? sele
 	sb.AppendLine("  Checkers");
 	sb.AppendLine();
 	sb.AppendLine($"    ╔═══════════════════╗");
-	sb.AppendLine($"  8 ║  {B(0, 7)} {B(1, 7)} {B(2, 7)} {B(3, 7)} {B(4, 7)} {B(5, 7)} {B(6, 7)} {B(7, 7)}  ║ {BlackPiece} = Black");
-	sb.AppendLine($"  7 ║  {B(0, 6)} {B(1, 6)} {B(2, 6)} {B(3, 6)} {B(4, 6)} {B(5, 6)} {B(6, 6)} {B(7, 6)}  ║ {BlackKing} = Black King");
-	sb.AppendLine($"  6 ║  {B(0, 5)} {B(1, 5)} {B(2, 5)} {B(3, 5)} {B(4, 5)} {B(5, 5)} {B(6, 5)} {B(7, 5)}  ║ {WhitePiece} = White");
-	sb.AppendLine($"  5 ║  {B(0, 4)} {B(1, 4)} {B(2, 4)} {B(3, 4)} {B(4, 4)} {B(5, 4)} {B(6, 4)} {B(7, 4)}  ║ {WhiteKing} = White King");
+	sb.AppendLine($"  8 ║  {B(0, 7)} {B(1, 7)} {B(2, 7)} {B(3, 7)} {B(4, 7)} {B(5, 7)} {B(6, 7)} {B(7, 7)}  ║ Black: {BlackNormal} = Black Normal {BlackRock} = Black Rock");
+	sb.AppendLine($"  7 ║  {B(0, 6)} {B(1, 6)} {B(2, 6)} {B(3, 6)} {B(4, 6)} {B(5, 6)} {B(6, 6)} {B(7, 6)}  ║        {BlackKnight} = Black Knight {BlackKing} = Black King");
+	sb.AppendLine($"  6 ║  {B(0, 5)} {B(1, 5)} {B(2, 5)} {B(3, 5)} {B(4, 5)} {B(5, 5)} {B(6, 5)} {B(7, 5)}  ║ White: {WhiteNormal} = White Normal {WhiteRock} = White Rock");
+	sb.AppendLine($"  5 ║  {B(0, 4)} {B(1, 4)} {B(2, 4)} {B(3, 4)} {B(4, 4)} {B(5, 4)} {B(6, 4)} {B(7, 4)}  ║        {WhiteKnight} = White Knight {WhiteKing} = White King");
 	sb.AppendLine($"  4 ║  {B(0, 3)} {B(1, 3)} {B(2, 3)} {B(3, 3)} {B(4, 3)} {B(5, 3)} {B(6, 3)} {B(7, 3)}  ║");
 	sb.AppendLine($"  3 ║  {B(0, 2)} {B(1, 2)} {B(2, 2)} {B(3, 2)} {B(4, 2)} {B(5, 2)} {B(6, 2)} {B(7, 2)}  ║ Taken:");
-	sb.AppendLine($"  2 ║  {B(0, 1)} {B(1, 1)} {B(2, 1)} {B(3, 1)} {B(4, 1)} {B(5, 1)} {B(6, 1)} {B(7, 1)}  ║ {game.TakenCount(White),2} x {WhitePiece}");
-	sb.AppendLine($"  1 ║  {B(0, 0)} {B(1, 0)} {B(2, 0)} {B(3, 0)} {B(4, 0)} {B(5, 0)} {B(6, 0)} {B(7, 0)}  ║ {game.TakenCount(Black),2} x {BlackPiece}");
+	sb.AppendLine($"  2 ║  {B(0, 1)} {B(1, 1)} {B(2, 1)} {B(3, 1)} {B(4, 1)} {B(5, 1)} {B(6, 1)} {B(7, 1)}  ║ {game.TakenCount(White),2} x {White}");
+	sb.AppendLine($"  1 ║  {B(0, 0)} {B(1, 0)} {B(2, 0)} {B(3, 0)} {B(4, 0)} {B(5, 0)} {B(6, 0)} {B(7, 0)}  ║ {game.TakenCount(Black),2} x {Black}");
 	sb.AppendLine($"    ╚═══════════════════╝");
 	sb.AppendLine($"       A B C D E F G H");
 	sb.AppendLine();
@@ -168,17 +271,17 @@ void RenderGameState(Game game, Player? playerMoved = null, (int X, int Y)? sele
 	{
 		char fromChar = ToChar(game.Board[from.Value.X, from.Value.Y]);
 		sb.Replace(" @ ", $"<{fromChar}>");
-		sb.Replace("@ ",  $"{fromChar}>");
-		sb.Replace(" @",  $"<{fromChar}");
+		sb.Replace("@ ", $"{fromChar}>");
+		sb.Replace(" @", $"<{fromChar}");
 	}
 	PieceColor? wc = game.Winner;
 	PieceColor? mc = playerMoved?.Color;
 	PieceColor? tc = game.Turn;
 	// Note: these strings need to match in length
 	// so they overwrite each other.
-	string w = $"  *** {wc} wins ***";
-	string m = $"  {mc} moved       ";
-	string t = $"  {tc}'s turn      ";
+	string w = $"  *** {wc} wins ***          ";
+	string m = $"  {mc} moved                 ";
+	string t = $"  {tc}'s turn                ";
 	sb.AppendLine(
 		game.Winner is not null ? w :
 		playerMoved is not null ? m :
@@ -195,12 +298,17 @@ void RenderGameState(Game game, Player? playerMoved = null, (int X, int Y)? sele
 
 	static char ToChar(Piece? piece) =>
 		piece is null ? Vacant : //if piece is null, display nothing
-		(piece.Color, piece.Promoted) switch //use two variable to check the piece's state
+								 //NEW: use piece.Type to determine the piece type
+		(piece.Color, piece.Type) switch //use two variable to check the piece's state
 		{
-			(Black, false) => BlackPiece,
-			(Black, true)  => BlackKing,
-			(White, false) => WhitePiece,
-			(White, true)  => WhiteKing,
+			(Black, PieceType.Normal) => BlackNormal,
+			(Black, PieceType.Rock) => BlackRock,
+			(Black, PieceType.Knight) => BlackKnight,
+			(Black, PieceType.King) => BlackKing,
+			(White, PieceType.Normal) => WhiteNormal,
+			(White, PieceType.Rock) => WhiteRock,
+			(White, PieceType.Knight) => WhiteKnight,
+			(White, PieceType.King) => WhiteKing,
 			_ => throw new NotImplementedException(),
 		};
 }
@@ -213,12 +321,12 @@ void RenderGameState(Game game, Player? playerMoved = null, (int X, int Y)? sele
 		RenderGameState(game, selection: selection, from: from);
 		switch (Console.ReadKey(true).Key)
 		{
-			case ConsoleKey.DownArrow:  selection.Y = Math.Max(0, selection.Y - 1); break;
-			case ConsoleKey.UpArrow:    selection.Y = Math.Min(7, selection.Y + 1); break;
-			case ConsoleKey.LeftArrow:  selection.X = Math.Max(0, selection.X - 1); break;
+			case ConsoleKey.DownArrow: selection.Y = Math.Max(0, selection.Y - 1); break;
+			case ConsoleKey.UpArrow: selection.Y = Math.Min(7, selection.Y + 1); break;
+			case ConsoleKey.LeftArrow: selection.X = Math.Max(0, selection.X - 1); break;
 			case ConsoleKey.RightArrow: selection.X = Math.Min(7, selection.X + 1); break;
-			case ConsoleKey.Enter:      return selection;
-			case ConsoleKey.Escape:     return null;
+			case ConsoleKey.Enter: return selection;
+			case ConsoleKey.Escape: return null;
 		}
 	}
 }

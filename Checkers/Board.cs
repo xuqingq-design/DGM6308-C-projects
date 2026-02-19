@@ -6,6 +6,8 @@ public class Board
 	public List<Piece> Pieces { get; } //store all 24 pieces on the board. If one is captured, remove it from List.
 
 	public Piece? Aggressor { get; set; }
+	//NEW: all kinds of pieces has extra move after capturing one piece
+	public Piece? PieceWithExtraMove { get; set; }
 
 	public Piece? this[int x, int y] =>
 		Pieces.FirstOrDefault(piece => piece.X == x && piece.Y == y); //borad[3,4] return piece[3,4]; if no piece here, return null
@@ -15,33 +17,40 @@ public class Board
 		Aggressor = null;
 		Pieces = new List<Piece>
 			{
+				//NEW:
 				//black pieces
-				new() { NotationPosition ="A3", Color = Black},
-				new() { NotationPosition ="A1", Color = Black},
-				new() { NotationPosition ="B2", Color = Black},
-				new() { NotationPosition ="C3", Color = Black},
-				new() { NotationPosition ="C1", Color = Black},
-				new() { NotationPosition ="D2", Color = Black},
-				new() { NotationPosition ="E3", Color = Black},
-				new() { NotationPosition ="E1", Color = Black},
-				new() { NotationPosition ="F2", Color = Black},
-				new() { NotationPosition ="G3", Color = Black},
-				new() { NotationPosition ="G1", Color = Black},
-				new() { NotationPosition ="H2", Color = Black},
-
+				//first row (3) Normal
+				new() { NotationPosition ="A3", Color = Black, Type = PieceType.Normal},
+				new() { NotationPosition ="C3", Color = Black, Type = PieceType.Normal},
+				new() { NotationPosition ="E3", Color = Black, Type = PieceType.Normal},
+				new() { NotationPosition ="G3", Color = Black, Type = PieceType.Normal},
+				//second row (2) Rock
+				new() { NotationPosition ="B2", Color = Black, Type = PieceType.Rock},
+				new() { NotationPosition ="D2", Color = Black, Type = PieceType.Rock},
+				new() { NotationPosition ="F2", Color = Black, Type = PieceType.Rock},
+				new() { NotationPosition ="H2", Color = Black, Type = PieceType.Rock},
+				//third row (3) Normal+Kight
+				new() { NotationPosition ="A1", Color = Black, Type = PieceType.Normal},
+				new() { NotationPosition ="C1", Color = Black, Type = PieceType.Knight},
+				new() { NotationPosition ="E1", Color = Black, Type = PieceType.Knight},
+				new() { NotationPosition ="G1", Color = Black, Type = PieceType.Normal},
 				//white pieces
-				new() { NotationPosition ="A7", Color = White},
-				new() { NotationPosition ="B8", Color = White},
-				new() { NotationPosition ="B6", Color = White},
-				new() { NotationPosition ="C7", Color = White},
-				new() { NotationPosition ="D8", Color = White},
-				new() { NotationPosition ="D6", Color = White},
-				new() { NotationPosition ="E7", Color = White},
-				new() { NotationPosition ="F8", Color = White},
-				new() { NotationPosition ="F6", Color = White},
-				new() { NotationPosition ="G7", Color = White},
-				new() { NotationPosition ="H8", Color = White},
-				new() { NotationPosition ="H6", Color = White}
+				//first row (6) Normal
+				new() { NotationPosition ="B6", Color = White, Type = PieceType.Normal},
+				new() { NotationPosition ="D6", Color = White, Type = PieceType.Normal},
+				new() { NotationPosition ="F6", Color = White, Type = PieceType.Normal},
+				new() { NotationPosition ="H6", Color = White, Type = PieceType.Normal},
+				//second row (7) Rock
+				new() { NotationPosition ="A7", Color = White, Type = PieceType.Rock},
+				new() { NotationPosition ="C7", Color = White, Type = PieceType.Rock},
+				new() { NotationPosition ="E7", Color = White, Type = PieceType.Rock},
+				new() { NotationPosition ="G7", Color = White, Type = PieceType.Rock},
+				//third row (8) Normal+Kight
+				new() { NotationPosition ="B8", Color = White, Type = PieceType.Normal},
+				new() { NotationPosition ="D8", Color = White, Type = PieceType.Knight},
+				new() { NotationPosition ="F8", Color = White, Type = PieceType.Knight},
+				new() { NotationPosition ="H8", Color = White, Type = PieceType.Normal}
+
 			};
 	}
 
@@ -97,6 +106,12 @@ public class Board
 			}
 			moves.AddRange(GetPossibleMoves(Aggressor).Where(move => move.PieceToCapture is not null));
 		}
+		//NEW: special pieces' extra moves
+		else if(PieceWithExtraMove is not null && PieceWithExtraMove.Color == color)
+		{
+			moves.AddRange(GetPossibleMoves(PieceWithExtraMove));
+			return moves; //only return the possible moves, not mandatory
+		}
 		else
 		{
 			foreach (Piece piece in Pieces.Where(piece => piece.Color == color))
@@ -113,11 +128,27 @@ public class Board
 	public List<Move> GetPossibleMoves(Piece piece) //get one piece's all possible moves
 	{
 		List<Move> moves = new();
-		//four diagonal moves:
-		ValidateDiagonalMove(-1, -1); //left down
-		ValidateDiagonalMove(-1,  1); //left up
-		ValidateDiagonalMove( 1, -1); //right down
-		ValidateDiagonalMove( 1,  1); //right up
+		//NEW：
+		switch (piece.Type)
+		{
+			case PieceType.Normal:
+				//four diagonal moves:
+				ValidateDiagonalMove(-1, -1); //left down
+				ValidateDiagonalMove(-1, 1); //left up
+				ValidateDiagonalMove(1, -1); //right down
+				ValidateDiagonalMove(1, 1); //right up
+				break;
+			case PieceType.Rock:
+				ValidateRockMove();
+				break;
+			case PieceType.Knight:
+				ValidateKnightMove();
+				break;
+			case PieceType.King:
+				ValidateKingMove();
+				break;
+		}
+
 		//if a piece can be capture, must do this move
 		return moves.Any(move => move.PieceToCapture is not null)
 			? moves.Where(move => move.PieceToCapture is not null).ToList()
@@ -146,6 +177,104 @@ public class Board
 				if (jumpColor is not null) return;
 				Move attack = new(piece, jump, this[target.X, target.Y]);
 				moves.Add(attack);
+			}
+		}
+		//NEW:
+		void ValidateRockMove()
+		{
+			CheckRockDirection(0, 1); //up
+			CheckRockDirection(0, -1); //down
+			CheckRockDirection(-1, 0); //left
+			CheckRockDirection(1, 0); //right
+			void CheckRockDirection(int moveX, int moveY)
+			{
+				//calculate the moving target position
+				int targetX = piece.X + moveX;
+				int targetY = piece.Y + moveY;
+				//check if the position is in the board
+				if (!IsValidPosition(targetX, targetY))
+				{
+					return;
+				}
+				//check if the target piece is empty
+				Piece? targetPiece = this[targetX, targetY];
+				if (targetPiece == null)
+				{
+					Move newMove = new Move(piece, (targetX, targetY));
+					moves.Add(newMove);
+				}
+				else if (targetPiece.Color != piece.Color) //if there has an opponent piece
+				{
+					Move captureMove = new Move(piece, (targetX, targetY), targetPiece);
+					moves.Add(captureMove);
+				}//if there has a same color piece, do nothing
+			}
+		}
+		void ValidateKnightMove()
+		{
+			CheckKnightDirection(0, 1, 1, 2); //piece check: up; self move: up-right
+			CheckKnightDirection(0, 1, -1, 2); //piece check: up; self move: up-left
+			CheckKnightDirection(0, -1, 1, -2); //piece check: down; self move: down-right
+			CheckKnightDirection(0, -1, -1, -2); //piece check: down; self move: down-right
+			CheckKnightDirection(-1, 0, -2, 1); //piece check: left; self move: left-up
+			CheckKnightDirection(-1, 0, -2, -1); //piece check: left; self move: left-down
+			CheckKnightDirection(1, 0, 2, 1); //piece check: right; self move: right-up
+			CheckKnightDirection(1, 0, 2, -1); //piece check: right; self move: right-down
+			void CheckKnightDirection(int blockX, int blockY, int moveX, int moveY)
+			{
+				int targetX = piece.X + moveX;
+				int targetY = piece.Y + moveY;
+				int blockPieceX = piece.X + blockX;
+				int blockPieceY = piece.Y + blockY;
+				Piece? blockPiece = this[blockPieceX, blockPieceY];
+				//check if the target position is valid or there is a block piece of moving Knight
+				if (!IsValidPosition(targetX, targetY) || blockPiece != null)
+				{
+					return;
+				}
+				//check if the target piece is empty
+				Piece? targetPiece = this[targetX, targetY];
+				if (targetPiece == null)
+				{
+					Move newMove = new Move(piece, (targetX, targetY));
+					moves.Add(newMove);
+				}
+				else if (targetPiece.Color != piece.Color)
+				{
+					Move captureMove = new Move(piece, (targetX, targetY), targetPiece);
+					moves.Add(captureMove);
+				}
+			}
+		}
+		void ValidateKingMove()
+		{
+			CheckKingDirection(-1, -1); // left-down
+			CheckKingDirection(-1, 0); // left
+			CheckKingDirection(-1, 1); // left-up
+			CheckKingDirection(0, -1); // down
+			CheckKingDirection(0, 1); // up
+			CheckKingDirection(1, -1); // right-down
+			CheckKingDirection(1, 0); // right
+			CheckKingDirection(1, 1); // right-up
+			void CheckKingDirection(int moveX, int moveY)
+			{
+				int targetX = piece.X + moveX;
+				int targetY = piece.Y + moveY;
+				if (!IsValidPosition(targetX, targetY))
+				{
+					return;
+				}
+				Piece? targetPiece = this[targetX, targetY];
+				if (targetPiece == null)
+				{
+					Move newMove = new Move(piece, (targetX, targetY));
+					moves.Add(newMove);
+				}
+				else if (targetPiece.Color != piece.Color)
+				{
+					Move captureMove = new Move(piece, (targetX, targetY), targetPiece);
+					moves.Add(captureMove);
+				}
 			}
 		}
 	}

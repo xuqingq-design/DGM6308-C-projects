@@ -15,5 +15,8 @@ public class Piece
 
 	public PieceColor Color { get; init; }
 
+	//NEW：
+	public PieceType Type {get; set;}
+
 	public bool Promoted { get; set; } //default: false
 }

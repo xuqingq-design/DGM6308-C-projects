@@ -9,6 +9,8 @@ public class Game
 	public Board Board { get; }
 	public PieceColor? Winner { get; private set; }
 	public List<Player> Players { get; }
+	//NEW: all kinds of pieces has extra move after capturing one piece
+	public Piece? PieceWithExtraMove { get; set; }
 
 	public Game(int humanPlayerCount)
 	{
@@ -38,15 +40,36 @@ public class Game
 		{
 			Board.Pieces.Remove(move.PieceToCapture);
 		}
+		//NEW: rewrite the logic
 		//check if the piece can capture other pieces continuously
-		if (move.PieceToCapture is not null &&
+		//if the piece type is normal one (keep original rules):
+		if (move.PieceToCapture is not null && move.PieceToMove.Type == PieceType.Normal &&
 			Board.GetPossibleMoves(move.PieceToMove).Any(m => m.PieceToCapture is not null))
 		{
 			Board.Aggressor = move.PieceToMove;
+			PieceWithExtraMove = null; //clear extra move
+			Board.PieceWithExtraMove =null; //to board.cs
+		}
+		//if the piece type is special one, give this piece one extra move (player can choose attack or withdraw)
+		else if (move.PieceToCapture is not null && (move.PieceToMove.Type == PieceType.King || move.PieceToMove.Type == PieceType.Knight || move.PieceToMove.Type == PieceType.Rock))//make sure the first condition is precondition
+		{
+			Board.Aggressor = null; //don't have to capture the aggressor
+			PieceWithExtraMove = move.PieceToMove;
+			Board.PieceWithExtraMove = move.PieceToMove;
+		}
+		//the player use the extra move
+		else if(PieceWithExtraMove == move.PieceToMove)
+		{
+			Board.Aggressor = null;
+			PieceWithExtraMove=null; //only one extra move
+			Board.PieceWithExtraMove=null;
+			Turn = Turn is Black ? White : Black; //switch turn
 		}
 		else
 		{
 			Board.Aggressor = null;
+			PieceWithExtraMove=null;
+			Board.PieceWithExtraMove=null;
 			Turn = Turn is Black ? White : Black; //switch turn
 		}
 		CheckForWinner();
