@@ -1,7 +1,8 @@
 ﻿//1 (run first)
-//首先，增加棋子的种类：马：可以走日字形（1，A）到（3，B）；车：只能走上下左右不能斜向；王：可以8方向移动；用不同的符号来区分它们。
-//第一排维持的棋子，第二排都改为车，第三排的中间两个改为马。
-//当棋子到达了底端，能升变成任意以上的棋子。
+//2/18 update: Firstly, increase the types of chess pieces: for Knight, they can move in a "日" style: (1, A) to (3, B). If there is a chess piece on the front grid (2, A), they cannot move forward; Rock: can only walk up, down, left, right, not diagonally; King: It can move in 8-directions; Use different symbols to distinguish them.
+//Then change the distribution of special chess pieces on the board: Noraml:○  Rock:□  Knight:△  King:☺. Only normal pieces can be promoted, and the player can choose any piece type before promoting.
+//When special pieces capture any opponent piece, they will have an extra turn to choose continue capture other pieces or withdraw.
+//main changes on: Board.cs; Game.cs; Piece.cs; Program.cs; add: PieceType.cs. I add why I do this beside each changed code.
 global using System;
 global using System.Collections.Generic;
 global using System.Linq;
