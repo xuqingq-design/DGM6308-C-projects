@@ -104,28 +104,31 @@ while (true)
     }
 
     Console.WriteLine($"your card:");
-    Console.WriteLine($"┌───────┐",
-                        "│███████│",
-                        "│███████│",
-                        "│███████│",
-                        "│███████│",
-                        "│███████│",
-                        "└───────┘",);
+    Console.WriteLine("┌───────┐");
+    Console.WriteLine("│███████│");
+    Console.WriteLine("│███████│");
+    Console.WriteLine("│███████│");
+    Console.WriteLine("│███████│");
+    Console.WriteLine("│███████│");
+    Console.WriteLine("└───────┘");
+    Console.WriteLine();
     Console.WriteLine("press enter to face up your card");
     while (Console.ReadKey(true).Key != ConsoleKey.Enter)
     {
         Console.WriteLine("wrong key, press again");
     }
+    string a = cardNumberPla;
+    //Console.Clear();
+    Console.WriteLine("┌───────┐");
+    Console.WriteLine($"│{a}██████│");
+    Console.WriteLine("│███████│");
+    Console.WriteLine("│███████│");
+    Console.WriteLine("│███████│");
+    Console.WriteLine($"│██████{a}│");
+    Console.WriteLine("└───────┘");
+    Console.WriteLine();
     if (randomNumberPla > randomNumberCom)
     {
-        string a = cardNumberPla;
-        Console.WriteLine("┌───────┐",
-                         $"│{a}████│",
-                           "│███████│",
-                           "│███████│",
-                           "│███████│",
-                           $"│████{a}│",
-                           "└───────┘",);
         Console.WriteLine($"your card number is: {cardNumberPla}, computer card number is: {cardNumberCom}");
         Console.WriteLine("player win");
         score += 1;
