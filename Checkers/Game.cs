@@ -11,6 +11,7 @@ public class Game
 	public List<Player> Players { get; }
 	//NEW: all kinds of pieces has extra move after capturing one piece
 	public Piece? PieceWithExtraMove { get; set; }
+	public bool UsingExtraMove {get; set; } = false; //3NEW
 
 	public Game(int humanPlayerCount)
 	{
@@ -24,21 +25,41 @@ public class Game
 		Turn = Black; //Black goes first
 		Winner = null;
 	}
+	//3NEW: create a public interface to access the private set: 'Turn' and 'Winner'
+	public void ResetGame()
+	{
+		Board.ResetBoard();
+		Turn = Black;
+		Winner = null;
+		PieceWithExtraMove = null;
+		UsingExtraMove = false;
+	}
 
 	public void PerformMove(Move move) //perform move
 	{
 		//update the piece position
 		(move.PieceToMove.X, move.PieceToMove.Y) = move.To;
 		//check if the piece has arrived the board boundary => promoted King
-		if ((move.PieceToMove.Color is Black && move.To.Y is 7) ||
-			(move.PieceToMove.Color is White && move.To.Y is 0))
+		if (move.PieceToMove.Type == PieceType.Normal && !move.PieceToMove.Promoted)
 		{
-			move.PieceToMove.Promoted = true;
+			if ((move.PieceToMove.Color is Black && move.To.Y is 7) ||
+			(move.PieceToMove.Color is White && move.To.Y is 0))
+			{
+				move.PieceToMove.Promoted = true;
+			}
 		}
 		//if it's capture move => remove the dead piece
 		if (move.PieceToCapture is not null)
 		{
 			Board.Pieces.Remove(move.PieceToCapture);
+		}
+		//3NEW: Fusion
+		if(move.PieceToFuse is not null)
+		{
+			//remove the fused pieces, and return the fusion result (which piece type?)
+			Board.Pieces.Remove(move.PieceToFuse);
+			move.PieceToMove.Type = Board.GetFusionResult(move.PieceToMove.Type, move.PieceToFuse.Type);
+			move.PieceToMove.Promoted = true;
 		}
 		//NEW: rewrite the logic
 		//check if the piece can capture other pieces continuously
@@ -48,28 +69,32 @@ public class Game
 		{
 			Board.Aggressor = move.PieceToMove;
 			PieceWithExtraMove = null; //clear extra move
-			Board.PieceWithExtraMove =null; //to board.cs
+			Board.PieceWithExtraMove = null; //to board.cs
+			UsingExtraMove = false;
 		}
 		//if the piece type is special one, give this piece one extra move (player can choose attack or withdraw)
-		else if (move.PieceToCapture is not null && (move.PieceToMove.Type == PieceType.King || move.PieceToMove.Type == PieceType.Knight || move.PieceToMove.Type == PieceType.Rock))//make sure the first condition is precondition
+		else if (move.PieceToCapture is not null && !UsingExtraMove && (move.PieceToMove.Type == PieceType.King || move.PieceToMove.Type == PieceType.Knight || move.PieceToMove.Type == PieceType.Rock || move.PieceToMove.Type == PieceType.Jet || move.PieceToMove.Type == PieceType.Tank || move.PieceToMove.Type == PieceType.Dragon))//make sure the first condition is precondition
 		{
 			Board.Aggressor = null; //don't have to capture the aggressor
 			PieceWithExtraMove = move.PieceToMove;
 			Board.PieceWithExtraMove = move.PieceToMove;
+			UsingExtraMove = true; //3NEW: balance fixing: special pieces only have one extra move 
 		}
 		//the player use the extra move
-		else if(PieceWithExtraMove == move.PieceToMove)
+		else if (PieceWithExtraMove == move.PieceToMove)
 		{
 			Board.Aggressor = null;
-			PieceWithExtraMove=null; //only one extra move
-			Board.PieceWithExtraMove=null;
+			PieceWithExtraMove = null; //only one extra move
+			Board.PieceWithExtraMove = null;
+			UsingExtraMove = false;
 			Turn = Turn is Black ? White : Black; //switch turn
 		}
 		else
 		{
 			Board.Aggressor = null;
-			PieceWithExtraMove=null;
-			Board.PieceWithExtraMove=null;
+			PieceWithExtraMove = null;
+			Board.PieceWithExtraMove = null;
+			UsingExtraMove = false;
 			Turn = Turn is Black ? White : Black; //switch turn
 		}
 		CheckForWinner();

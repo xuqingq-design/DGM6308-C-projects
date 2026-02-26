@@ -110,29 +110,46 @@ void RunGameLoop(Game game)
 					if (move is not null &&
 						(game.Board.Aggressor is null || move.PieceToMove == game.Board.Aggressor))
 					{
-						//NEW: check if the piece is going to arrive at the edge of the board => get promoted
-						bool piecePromote = false;
-						if (move.PieceToMove.Type == PieceType.Normal && !move.PieceToMove.Promoted) //only normal piece can be promoted
+
+						//3NEW: confirm the fusion Y/N
+						bool turnProceed = true;
+						if (move.PieceToFuse is not null)
 						{
-							if (move.PieceToMove.Color is Black && move.To.Y == 7)
-							{
-								piecePromote = true;
-							}
-							else if (move.PieceToMove.Color is White && move.To.Y == 0)
-							{
-								piecePromote = true;
-							}
+							turnProceed = ShowFusionConfirmation(game, move);
 						}
-						game.PerformMove(move);
-						if (piecePromote)
+
+						//NEW: check if the piece is going to arrive at the edge of the board => get promoted
+						if (turnProceed)
 						{
-							//let the player choose the promote type of this piece
-							PieceType piecePromoteSelectionType = promoteSelection(game, move.PieceToMove);
-							move.PieceToMove.Type = piecePromoteSelectionType;
-							move.PieceToMove.Promoted = true;
-							//clear the console and re-render the board
-							Console.Clear();
-							RenderGameState(game, playerMoved: currentPlayer, promptPressKey: false);
+							bool piecePromote = false;
+							if (move.PieceToMove.Type == PieceType.Normal && !move.PieceToMove.Promoted) //only normal piece can be promoted
+							{
+								if (move.PieceToMove.Color is Black && move.To.Y == 7)
+								{
+									piecePromote = true;
+								}
+								else if (move.PieceToMove.Color is White && move.To.Y == 0)
+								{
+									piecePromote = true;
+								}
+							}
+							game.PerformMove(move);
+							if (piecePromote)
+							{
+								//let the player choose the promote type of this piece
+								PieceType piecePromoteSelectionType = promoteSelection(game, move.PieceToMove);
+								move.PieceToMove.Type = piecePromoteSelectionType;
+								move.PieceToMove.Promoted = true;
+								//clear the console and re-render the board
+								Console.Clear();
+								RenderGameState(game, playerMoved: currentPlayer, promptPressKey: false);
+							}
+							//3NEW:
+							if (move.PieceToFuse is not null)
+							{
+								Console.Clear();
+								RenderGameState(game, playerMoved: currentPlayer, promptPressKey: false);
+							}
 						}
 					}
 				}
@@ -142,9 +159,17 @@ void RunGameLoop(Game game)
 		{
 			List<Move> moves = game.Board.GetPossibleMoves(game.Turn);
 			List<Move> captures = moves.Where(move => move.PieceToCapture is not null).ToList();
+			List<Move> fusionMoves = moves.Where(move => move.PieceToFuse is not null).ToList();
+
 			//NEW: define selectedMove
 			Move? selectedMove = null;
-			if (captures.Count > 0) //if pieces can capture other opponent's pieces
+
+			//3NEW: fusion moves first
+			if (fusionMoves.Count > 0)
+			{
+				selectedMove = fusionMoves[Random.Shared.Next(fusionMoves.Count)];
+			}
+			else if (captures.Count > 0) //if pieces can capture other opponent's pieces
 			{
 				selectedMove = captures[Random.Shared.Next(captures.Count)]; //randomly select a piece to capture
 			}
@@ -178,12 +203,71 @@ void RunGameLoop(Game game)
 				PieceType[] promoteOptions = { PieceType.Rock, PieceType.Knight, PieceType.King };
 				//computer select one type to promote randomly
 				selectedMove.PieceToMove.Type = promoteOptions[Random.Shared.Next(0, promoteOptions.Length)];
-				selectedMove.PieceToMove.Promoted=true;
+				selectedMove.PieceToMove.Promoted = true;
 			}
 		}
 
 		RenderGameState(game, playerMoved: currentPlayer, promptPressKey: true); //render the state after moving
 		Console.ReadKey(true);
+	}
+}
+
+//3NEW: display fusion confirmation
+bool ShowFusionConfirmation(Game game, Move move)
+{
+	//get the result of fusion
+	PieceType resultType = Board.GetFusionResult(move.PieceToMove.Type, move.PieceToFuse!.Type);
+
+	Console.Clear();
+	Console.WriteLine();
+	Console.WriteLine("  ╔═══════════════════════════════════════════════════╗");
+	Console.WriteLine("  ║            FUSION CONFIRMATION                    ║");
+	Console.WriteLine("  ╚═══════════════════════════════════════════════════╝");
+	Console.WriteLine();
+	Console.WriteLine($"  Fusion:");
+	Console.WriteLine($"    Type1: {move.PieceToMove.Type}");
+	Console.WriteLine($"    +");
+	Console.WriteLine($"    Type2: {move.PieceToFuse.Type}");
+	Console.WriteLine($"    =");
+	Console.WriteLine($"  Result: {resultType}");
+	Console.WriteLine();
+	// List all possiblilities of fusion results, and check which this result would be? Then display its way of moving
+	switch (resultType)
+	{
+		case PieceType.Jet:
+			Console.WriteLine("  Jet moves:");
+			Console.WriteLine("  Moves diagonally 2 squares");
+			break;
+		case PieceType.Tank:
+			Console.WriteLine("  Tank moves:");
+			Console.WriteLine("  Moves straight 2 squares");
+			break;
+		case PieceType.King:
+			Console.WriteLine("  King moves:");
+			Console.WriteLine("  Moves in all 8 directions (1 square)");
+			break;
+		case PieceType.Dragon:
+			Console.WriteLine("  Dragon moves:");
+			Console.WriteLine("  Moves in all 8 directions (2 squares)");
+			break;
+	}
+	// confirm the fusion: Y/N
+	Console.WriteLine();
+	Console.WriteLine("  Do you want to proceed with this fusion?");
+	Console.WriteLine("  Input [Y]/[N] ");
+	while (true)
+	{
+		Console.CursorVisible = false;
+		ConsoleKey key = Console.ReadKey(true).Key;
+		switch (key)
+		{
+			case ConsoleKey.Y:
+			    return true;
+			case ConsoleKey.N:
+			    return false;
+			default:
+			    continue;
+		}
 	}
 }
 
@@ -239,23 +323,29 @@ void RenderGameState(Game game, Player? playerMoved = null, (int X, int Y)? sele
 	const char BlackRock = '□'; //NEW
 	const char BlackKnight = '△'; //NEW 
 	const char BlackKing = '☺';
-	const char WhiteNormal = '◙';
+	const char BlackJet = '◁';
+	const char BlackTank = '▽';
+	const char BlackDragon = '☆';
+	const char WhiteNormal = '●';
 	const char WhiteRock = '■'; //NEW
 	const char WhiteKnight = '▲'; //NEW 
 	const char WhiteKing = '☻';
+	const char WhiteJet = '◀';
+	const char WhiteTank = '▼';
+	const char WhiteDragon = '★';
 	const char Vacant = '·';
 
 	Console.CursorVisible = false;
-	Console.SetCursorPosition(0, 0);
+	Console.Clear();
 	StringBuilder sb = new();
 	sb.AppendLine();
 	sb.AppendLine("  Checkers");
 	sb.AppendLine();
 	sb.AppendLine($"    ╔═══════════════════╗");
-	sb.AppendLine($"  8 ║  {B(0, 7)} {B(1, 7)} {B(2, 7)} {B(3, 7)} {B(4, 7)} {B(5, 7)} {B(6, 7)} {B(7, 7)}  ║ Black: {BlackNormal} = Black Normal {BlackRock} = Black Rock");
-	sb.AppendLine($"  7 ║  {B(0, 6)} {B(1, 6)} {B(2, 6)} {B(3, 6)} {B(4, 6)} {B(5, 6)} {B(6, 6)} {B(7, 6)}  ║        {BlackKnight} = Black Knight {BlackKing} = Black King");
-	sb.AppendLine($"  6 ║  {B(0, 5)} {B(1, 5)} {B(2, 5)} {B(3, 5)} {B(4, 5)} {B(5, 5)} {B(6, 5)} {B(7, 5)}  ║ White: {WhiteNormal} = White Normal {WhiteRock} = White Rock");
-	sb.AppendLine($"  5 ║  {B(0, 4)} {B(1, 4)} {B(2, 4)} {B(3, 4)} {B(4, 4)} {B(5, 4)} {B(6, 4)} {B(7, 4)}  ║        {WhiteKnight} = White Knight {WhiteKing} = White King");
+	sb.AppendLine($"  8 ║  {B(0, 7)} {B(1, 7)} {B(2, 7)} {B(3, 7)} {B(4, 7)} {B(5, 7)} {B(6, 7)} {B(7, 7)}  ║ Black: {BlackNormal}Black Normal {BlackRock}Black Rock {BlackJet}Black Jet {BlackTank}Black Tank");
+	sb.AppendLine($"  7 ║  {B(0, 6)} {B(1, 6)} {B(2, 6)} {B(3, 6)} {B(4, 6)} {B(5, 6)} {B(6, 6)} {B(7, 6)}  ║        {BlackKnight}Black Knight {BlackKing}Black King {BlackRock}Black Rock {BlackDragon}Black Dragon");
+	sb.AppendLine($"  6 ║  {B(0, 5)} {B(1, 5)} {B(2, 5)} {B(3, 5)} {B(4, 5)} {B(5, 5)} {B(6, 5)} {B(7, 5)}  ║ White: {WhiteNormal}White Normal {WhiteRock}White Rock {WhiteJet}White Jet {WhiteTank}White Tank");
+	sb.AppendLine($"  5 ║  {B(0, 4)} {B(1, 4)} {B(2, 4)} {B(3, 4)} {B(4, 4)} {B(5, 4)} {B(6, 4)} {B(7, 4)}  ║        {WhiteKnight}White Knight {WhiteKing}White King {WhiteRock}White Rock {WhiteDragon}White Dragon");
 	sb.AppendLine($"  4 ║  {B(0, 3)} {B(1, 3)} {B(2, 3)} {B(3, 3)} {B(4, 3)} {B(5, 3)} {B(6, 3)} {B(7, 3)}  ║");
 	sb.AppendLine($"  3 ║  {B(0, 2)} {B(1, 2)} {B(2, 2)} {B(3, 2)} {B(4, 2)} {B(5, 2)} {B(6, 2)} {B(7, 2)}  ║ Taken:");
 	sb.AppendLine($"  2 ║  {B(0, 1)} {B(1, 1)} {B(2, 1)} {B(3, 1)} {B(4, 1)} {B(5, 1)} {B(6, 1)} {B(7, 1)}  ║ {game.TakenCount(White),2} x {White}");
@@ -305,10 +395,16 @@ void RenderGameState(Game game, Player? playerMoved = null, (int X, int Y)? sele
 			(Black, PieceType.Rock) => BlackRock,
 			(Black, PieceType.Knight) => BlackKnight,
 			(Black, PieceType.King) => BlackKing,
+			(Black, PieceType.Jet) => BlackJet,
+			(Black, PieceType.Tank) => BlackTank,
+			(Black, PieceType.Dragon) => BlackDragon,
 			(White, PieceType.Normal) => WhiteNormal,
 			(White, PieceType.Rock) => WhiteRock,
 			(White, PieceType.Knight) => WhiteKnight,
 			(White, PieceType.King) => WhiteKing,
+			(White, PieceType.Jet) => WhiteJet,
+			(White, PieceType.Tank) => WhiteTank,
+			(White, PieceType.Dragon) => WhiteDragon,
 			_ => throw new NotImplementedException(),
 		};
 }
@@ -327,6 +423,38 @@ void RenderGameState(Game game, Player? playerMoved = null, (int X, int Y)? sele
 			case ConsoleKey.RightArrow: selection.X = Math.Min(7, selection.X + 1); break;
 			case ConsoleKey.Enter: return selection;
 			case ConsoleKey.Escape: return null;
+			//3NEW: reset board
+			case ConsoleKey.R:
+				if (ShowResetConfirmation())
+				{
+					game.ResetGame();
+					Console.Clear();
+				}
+				break;
+		}
+	}
+}
+
+//3NEW: Reset confirmation
+bool ShowResetConfirmation()
+{
+	Console.Clear();
+	Console.WriteLine();
+	Console.WriteLine("  This will reset the board to the initial state.");
+	Console.WriteLine("  Are you sure?");
+	Console.WriteLine("  Input [Y]/[N]");
+	while (true)
+	{
+		Console.CursorVisible = false;
+		ConsoleKey key = Console.ReadKey(true).Key;
+		switch (key)
+		{
+			case ConsoleKey.Y:
+				return true;
+			case ConsoleKey.N:
+				return false;
+			default:
+				continue;
 		}
 	}
 }

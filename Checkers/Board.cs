@@ -107,7 +107,7 @@ public class Board
 			moves.AddRange(GetPossibleMoves(Aggressor).Where(move => move.PieceToCapture is not null));
 		}
 		//NEW: special pieces' extra moves
-		else if(PieceWithExtraMove is not null && PieceWithExtraMove.Color == color)
+		else if (PieceWithExtraMove is not null && PieceWithExtraMove.Color == color)
 		{
 			moves.AddRange(GetPossibleMoves(PieceWithExtraMove));
 			return moves; //only return the possible moves, not mandatory
@@ -147,6 +147,16 @@ public class Board
 			case PieceType.King:
 				ValidateKingMove();
 				break;
+			//3NEW:
+			case PieceType.Jet:
+				ValidateJetMove();
+				break;
+			case PieceType.Tank:
+				ValidateTankMove();
+				break;
+			case PieceType.Dragon:
+				ValidateDragonMove();
+				break;
 		}
 
 		//if a piece can be capture, must do this move
@@ -162,6 +172,7 @@ public class Board
 
 			(int X, int Y) target = (piece.X + dx, piece.Y + dy); //calculate the end moving(target) position
 			if (!IsValidPosition(target.X, target.Y)) return;
+			Piece? targetPiece = this[target.X, target.Y];
 			PieceColor? targetColor = this[target.X, target.Y]?.Color;
 			if (targetColor is null) //target position is empty => normal moving
 			{
@@ -169,6 +180,12 @@ public class Board
 				Move newMove = new(piece, target);
 				moves.Add(newMove);
 			}
+			//3NEW: Fusion
+				else if (targetColor == piece.Color && CanFuse(piece.Type, targetPiece.Type))
+				{
+					Move fusionMove = new Move(piece, (target.X, target.Y), null, targetPiece);
+					moves.Add(fusionMove);
+				}
 			else if (targetColor != piece.Color) //capture moving
 			{
 				(int X, int Y) jump = (piece.X + 2 * dx, piece.Y + 2 * dy);
@@ -202,6 +219,12 @@ public class Board
 				{
 					Move newMove = new Move(piece, (targetX, targetY));
 					moves.Add(newMove);
+				}
+				//3NEW: Fusion
+				else if (targetPiece.Color == piece.Color && CanFuse(piece.Type, targetPiece.Type))
+				{
+					Move fusionMove = new Move(piece, (targetX, targetY), null, targetPiece);
+					moves.Add(fusionMove);
 				}
 				else if (targetPiece.Color != piece.Color) //if there has an opponent piece
 				{
@@ -239,6 +262,12 @@ public class Board
 					Move newMove = new Move(piece, (targetX, targetY));
 					moves.Add(newMove);
 				}
+				//3NEW: Fusion
+				else if (targetPiece.Color == piece.Color && CanFuse(piece.Type, targetPiece.Type))
+				{
+					Move fusionMove = new Move(piece, (targetX, targetY), null, targetPiece);
+					moves.Add(fusionMove);
+				}
 				else if (targetPiece.Color != piece.Color)
 				{
 					Move captureMove = new Move(piece, (targetX, targetY), targetPiece);
@@ -270,11 +299,125 @@ public class Board
 					Move newMove = new Move(piece, (targetX, targetY));
 					moves.Add(newMove);
 				}
+				//3NEW: Fusion
+				else if (targetPiece.Color == piece.Color && CanFuse(piece.Type, targetPiece.Type))
+				{
+					Move fusionMove = new Move(piece, (targetX, targetY), null, targetPiece);
+					moves.Add(fusionMove);
+				}
 				else if (targetPiece.Color != piece.Color)
 				{
 					Move captureMove = new Move(piece, (targetX, targetY), targetPiece);
 					moves.Add(captureMove);
 				}
+			}
+		}
+		//3NEW:
+		void ValidateJetMove()
+		{
+			CheckJetDirection(-2, 2);
+			CheckJetDirection(2, 2);
+			CheckJetDirection(-2, 2);
+			CheckJetDirection(2, 2);
+			void CheckJetDirection(int moveX, int moveY)
+			{
+				//calculate the moving target position
+				int targetX = piece.X + moveX;
+				int targetY = piece.Y + moveY;
+				//check if the position is in the board
+				if (!IsValidPosition(targetX, targetY))
+				{
+					return;
+				}
+				//check if the target piece is empty
+				Piece? targetPiece = this[targetX, targetY];
+				if (targetPiece == null)
+				{
+					Move newMove = new Move(piece, (targetX, targetY));
+					moves.Add(newMove);
+				}
+				//3NEW: Fusion
+				else if (targetPiece.Color == piece.Color && CanFuse(piece.Type, targetPiece.Type))
+				{
+					Move fusionMove = new Move(piece, (targetX, targetY), null, targetPiece);
+					moves.Add(fusionMove);
+				}
+				else if (targetPiece.Color != piece.Color) //if there has an opponent piece
+				{
+					Move captureMove = new Move(piece, (targetX, targetY), targetPiece);
+					moves.Add(captureMove);
+				}//if there has a same color piece, do nothing
+			}
+		}
+		void ValidateTankMove()
+		{
+			CheckTankDirection(0, 2);
+			CheckTankDirection(0, -2);
+			CheckTankDirection(-2, 0);
+			CheckTankDirection(2, 0);
+			void CheckTankDirection(int moveX, int moveY)
+			{
+				//calculate the moving target position
+				int targetX = piece.X + moveX;
+				int targetY = piece.Y + moveY;
+				//check if the position is in the board
+				if (!IsValidPosition(targetX, targetY))
+				{
+					return;
+				}
+				//check if the target piece is empty
+				Piece? targetPiece = this[targetX, targetY];
+				if (targetPiece == null)
+				{
+					Move newMove = new Move(piece, (targetX, targetY));
+					moves.Add(newMove);
+				}
+				//3NEW: Fusion
+				else if (targetPiece.Color == piece.Color && CanFuse(piece.Type, targetPiece.Type))
+				{
+					Move fusionMove = new Move(piece, (targetX, targetY), null, targetPiece);
+					moves.Add(fusionMove);
+				}
+				else if (targetPiece.Color != piece.Color) //if there has an opponent piece
+				{
+					Move captureMove = new Move(piece, (targetX, targetY), targetPiece);
+					moves.Add(captureMove);
+				}//if there has a same color piece, do nothing
+			}
+		}
+		void ValidateDragonMove()
+		{
+			CheckDragonDirection(-2, -2);
+			CheckDragonDirection(-2, 0);
+			CheckDragonDirection(-2, 2);
+			CheckDragonDirection(0, -2);
+			CheckDragonDirection(0, 2);
+			CheckDragonDirection(2, -2);
+			CheckDragonDirection(2, 0);
+			CheckDragonDirection(2, 2);
+			void CheckDragonDirection(int moveX, int moveY)
+			{
+				//calculate the moving target position
+				int targetX = piece.X + moveX;
+				int targetY = piece.Y + moveY;
+				//check if the position is in the board
+				if (!IsValidPosition(targetX, targetY))
+				{
+					return;
+				}
+				//check if the target piece is empty
+				Piece? targetPiece = this[targetX, targetY];
+				if (targetPiece == null)
+				{
+					Move newMove = new Move(piece, (targetX, targetY));
+					moves.Add(newMove);
+				}
+				//dragon is the highest level, can not be fused
+				else if (targetPiece.Color != piece.Color) //if there has an opponent piece
+				{
+					Move captureMove = new Move(piece, (targetX, targetY), targetPiece);
+					moves.Add(captureMove);
+				}//if there has a same color piece, do nothing
 			}
 		}
 	}
@@ -309,5 +452,96 @@ public class Board
 		int b_distanceSquared = b.Dx * b.Dx + b.Dy * b.Dy;
 		//if the distance after moving is smaller, return
 		return b_distanceSquared < a_distanceSquared;
+	}
+
+	//3NEW:
+	public static bool CanFuse(PieceType type1, PieceType type2)
+	{
+		if (type1 == PieceType.Dragon || type2 == PieceType.Dragon)
+		{
+			return false;
+		}
+		//all fusion possibilities
+		if ((type1 == PieceType.Normal && type2 == PieceType.Normal) || (type1 == PieceType.Rock && type2 == PieceType.Rock) || (type1 == PieceType.Knight && type2 == PieceType.Knight) || (type1 == PieceType.King && type2 == PieceType.King))
+		{
+			return true;
+		}
+		if ((type1 == PieceType.Normal && type2 == PieceType.Knight) || (type2 == PieceType.Normal && type1 == PieceType.Knight))
+		{
+			return true;
+		}
+		if ((type1 == PieceType.Rock && type2 == PieceType.Knight) || (type2 == PieceType.Rock && type1 == PieceType.Knight))
+		{
+			return true;
+		}
+		if ((type1 == PieceType.Normal && type2 == PieceType.Rock) || (type2 == PieceType.Normal && type1 == PieceType.Rock))
+		{
+			return true;
+		}
+		if ((type1 == PieceType.Jet && type2 == PieceType.Tank) || (type2 == PieceType.Jet && type1 == PieceType.Tank))
+		{
+			return true;
+		}
+		return false;
+	}
+	public static PieceType GetFusionResult(PieceType type1, PieceType type2)
+	{
+		if((type1 == PieceType.Normal && type2 == PieceType.Normal)||(type1 == PieceType.Knight && type2 == PieceType.Knight))
+		{
+			return PieceType.Jet;
+		}
+		if((type1 == PieceType.Knight && type2 == PieceType.Normal)||(type2 == PieceType.Knight && type1 == PieceType.Normal))
+		{
+			return PieceType.Jet;
+		}
+		if((type1 == PieceType.Rock && type2 == PieceType.Rock)||(type1 == PieceType.Rock && type2 == PieceType.Knight)||(type2 == PieceType.Rock && type1 == PieceType.Knight))
+		{
+			return PieceType.Tank;
+		}
+		if((type1 == PieceType.Rock && type2 == PieceType.Normal)||(type2 == PieceType.Rock && type1 == PieceType.Normal))
+		{
+			return PieceType.King;
+		}
+		if((type1 == PieceType.Jet && type2 == PieceType.Tank)||(type2 == PieceType.Jet && type1 == PieceType.Tank)||(type1 == PieceType.King && type2 == PieceType.King))
+		{
+			return PieceType.Dragon;
+		}
+		//if cannot be fused:
+		throw new InvalidOperationException($"Cannot fuse {type1} with {type2}");
+	}
+	public void ResetBoard()
+	{
+		Pieces.Clear();
+		Aggressor = null;
+		PieceWithExtraMove = null;
+		Pieces.AddRange(new List<Piece>
+	{
+		// Black pieces
+		new() { NotationPosition ="A3", Color = Black, Type = PieceType.Normal},
+		new() { NotationPosition ="C3", Color = Black, Type = PieceType.Normal},
+		new() { NotationPosition ="E3", Color = Black, Type = PieceType.Normal},
+		new() { NotationPosition ="G3", Color = Black, Type = PieceType.Normal},
+		new() { NotationPosition ="B2", Color = Black, Type = PieceType.Rock},
+		new() { NotationPosition ="D2", Color = Black, Type = PieceType.Rock},
+		new() { NotationPosition ="F2", Color = Black, Type = PieceType.Rock},
+		new() { NotationPosition ="H2", Color = Black, Type = PieceType.Rock},
+		new() { NotationPosition ="A1", Color = Black, Type = PieceType.Normal},
+		new() { NotationPosition ="C1", Color = Black, Type = PieceType.Knight},
+		new() { NotationPosition ="E1", Color = Black, Type = PieceType.Knight},
+		new() { NotationPosition ="G1", Color = Black, Type = PieceType.Normal},
+		// White pieces
+		new() { NotationPosition ="B6", Color = White, Type = PieceType.Normal},
+		new() { NotationPosition ="D6", Color = White, Type = PieceType.Normal},
+		new() { NotationPosition ="F6", Color = White, Type = PieceType.Normal},
+		new() { NotationPosition ="H6", Color = White, Type = PieceType.Normal},
+		new() { NotationPosition ="A7", Color = White, Type = PieceType.Rock},
+		new() { NotationPosition ="C7", Color = White, Type = PieceType.Rock},
+		new() { NotationPosition ="E7", Color = White, Type = PieceType.Rock},
+		new() { NotationPosition ="G7", Color = White, Type = PieceType.Rock},
+		new() { NotationPosition ="B8", Color = White, Type = PieceType.Normal},
+		new() { NotationPosition ="D8", Color = White, Type = PieceType.Knight},
+		new() { NotationPosition ="F8", Color = White, Type = PieceType.Knight},
+		new() { NotationPosition ="H8", Color = White, Type = PieceType.Normal}
+	});
 	}
 }

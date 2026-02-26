@@ -9,10 +9,13 @@ public class Move
 
 	public Piece? PieceToCapture { get; set; } //the piece which is going to be captured(can be null)
 
-	public Move(Piece pieceToMove, (int X, int Y) to, Piece? pieceToCapture = null)
+	public Piece? PieceToFuse {get;set;}
+
+	public Move(Piece pieceToMove, (int X, int Y) to, Piece? pieceToCapture = null, Piece? pieceToFuse = null)
 	{
 		PieceToMove = pieceToMove;
 		To = to;
 		PieceToCapture = pieceToCapture;
+		PieceToFuse = pieceToFuse;
 	}
 }
