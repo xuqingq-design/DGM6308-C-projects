@@ -84,7 +84,7 @@ namespace TribalGame
                 }
                 else if (colorScore > 0)
                 {
-                    scoreDesc = string.Format($"COLOR +{suitScore}!");
+                    scoreDesc = string.Format($"COLOR +{colorScore}!");
                 }
                 else
                 {

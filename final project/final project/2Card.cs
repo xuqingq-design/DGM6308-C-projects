@@ -1,5 +1,6 @@
 ﻿//2 cards' details
-//create main properties of cards(suit, type, rank, ...), display cards' description
+//create main properties of cards(suit, type, rank, ...), display cards' description(special cards' name/effect)
+//card art uopdate
 using System;
 namespace TribalGame
 {

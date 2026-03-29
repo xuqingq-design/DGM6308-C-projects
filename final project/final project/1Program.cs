@@ -1,5 +1,5 @@
 ﻿//main program entry: start first
-//choose game mode(PVE/PVE), create game menu
+//choose game mode(PVE/PVE), create game menu => game engine.run()
 using System;
 
 namespace TribalGame //as a main folder

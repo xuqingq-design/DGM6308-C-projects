@@ -1,5 +1,5 @@
 ﻿//8 Game Engine
-//
+//main gameplay running logic
 using System;
 using System.Collections.Generic;
 using System.Linq;
